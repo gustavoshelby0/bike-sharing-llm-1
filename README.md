@@ -1,4 +1,4 @@
-# Análise Exploratória e Diagnóstica da ?? usando LLM
+# Análise Exploratória e Diagnóstica da Categoria Bike-Sharing usando LLM
 
 ## Problema de Negócio
 
