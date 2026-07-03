@@ -20,6 +20,7 @@ Com base nas suas respostas, aqui está o contexto de negócio consolidado:
 ## Premissas da análise
 
 A base tem 10.886 registros horários, cobrindo 01/01/2011 a 19/12/2012 (~2 anos), sem valores nulos — uma base limpa e granular, ideal para análise de séries temporais e padrões de demanda.
+
 ---
 
 ## Estratégia da solução
@@ -32,7 +33,7 @@ As perguntas abertas são um tipo de demanda muito comum em análise de dados na
 
 Para essa análise, foi definida a seguinte pergunta aberta:
 
-> **Como esta o crescimento da categoria de bike-sharing? devemos cortar esse setor? ou investir?**
+> **Como está o crescimento da categoria de bike-sharing? Devemos cortar esse setor? Ou investir?**
 
 ### Passo 2: Transformar pergunta aberta em fechada
 
@@ -40,13 +41,13 @@ As perguntas fechadas são um tipo de demanda muito comum na área de análise d
 
 Para essa análise, foi definida a seguinte pergunta fechada:
 
-> **Pergunta Fechada:** quero um grafico de barra mostrando a evolucao da demanda de bike-sharing durante o tempo, para entender se e algo meramente sazional ou se a categoria esta indo pra frente
+> **Pergunta Fechada:** quero um gráfico de barras mostrando a evolução da demanda de bike-sharing durante o tempo, para entender se é algo meramente sazonal ou se a categoria está indo pra frente.
 
 ### Passo 3: Definição da Coluna Fato
 
 O **Fato** é a coluna de interesse que representa o ponto focal da análise. (dataframe)
 
-datetime — carimbo horário do registro. É a espinha dorsal da análise: permite decompor em ano, mês, dia da semana e hora, essencial para separar tendência (crescimento estrutural) de sazonalidade (padrão que se repete).
+`datetime` — carimbo de data/hora do registro. É a espinha dorsal da análise: permite decompor em ano, mês, dia da semana e hora, essencial para separar tendência (crescimento estrutural) de sazonalidade (padrão que se repete).
 
 ### Passo 4: Identificação das Dimensões
 
@@ -56,7 +57,7 @@ datetime — carimbo horário do registro. É a espinha dorsal da análise: perm
 
 **Dimensões de tempo/contexto**
 
-- **`datetime`** — carimbo horário do registro. É a espinha dorsal da análise: permite decompor em ano, mês, dia da semana e hora, essencial para separar tendência (crescimento estrutural) de sazonalidade (padrão que se repete).
+- **`datetime`** — carimbo de data/hora do registro. É a espinha dorsal da análise: permite decompor em ano, mês, dia da semana e hora, essencial para separar tendência (crescimento estrutural) de sazonalidade (padrão que se repete).
 - **`season`** (1=inverno, 2=primavera, 3=verão, 4=outono) — estação do ano. Negócio: bike-sharing é fortemente sazonal; ajuda a entender se quedas de volume são "o negócio piorando" ou "só é inverno".
 - **`holiday`** (0/1) — se o dia é feriado. Negócio: muda o perfil de uso (mais lazer, menos deslocamento para trabalho).
 - **`workingday`** (0/1) — se é dia útil (não é fim de semana nem feriado). Negócio: separa uso "utilitário" (ir trabalhar) de uso "recreativo" (passeio).
@@ -96,8 +97,8 @@ datetime — carimbo horário do registro. É a espinha dorsal da análise: perm
 
 **O que essa base NÃO responde diretamente** (importante para o CEO): não há receita, custo, ticket médio, churn de assinantes ou CAC — então ela mede muito bem a **demanda/uso do produto**, mas a decisão final de investir vs. cortar dependeria de cruzar isso com dados financeiros, se disponíveis.
 
-
 ### Passo 5: Hipóteses Analíticas
+
 #### Bloco A — Crescimento do negócio
 
 **H1: A demanda total (`count`) cresceu de 2011 para 2012.**
@@ -178,13 +179,14 @@ datetime — carimbo horário do registro. É a espinha dorsal da análise: perm
 | H1 | Demanda total cresceu 2011→2012 | ✅ Confirmada (+66,7%) |
 | H2 | Crescimento consistente em todos os meses | ✅ Confirmada |
 | H3 | Crescimento puxado por `registered` | ✅ Confirmada (+70% vs +52%) |
-| H4 | Participação de `registered` cresce no tempo | 🟡 Parcial (leve alta, ofuscada por sazonalidade) |
+| H4 | Participação de `registered` cresce ao longo do tempo | 🟡 Parcial (leve alta, ofuscada por sazonalidade) |
 | H5 | Forte sazonalidade por estação | ✅ Confirmada |
 | H6 | Clima ruim afeta mais `casual` | ✅ Confirmada |
 | H7 | Curva em sino de temperatura (conforto) | ❌ Refutada (curva sobe e estabiliza, não cai) |
-| H8 | Dias úteis: picos 8h/18h, dominado registered | ✅ Confirmada |
+| H8 | Dias úteis: picos 8h/18h, dominado por registered | ✅ Confirmada |
 | H9 | Fim de semana: distribuído, dominado por casual | 🟡 Parcial (distribuído sim; dominado não — registered ainda é maioria) |
 | H10 | Feriado parecido com fim de semana | ✅ Confirmada |
+
 ---
 
 ## Insights da análise
