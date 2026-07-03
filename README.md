@@ -192,10 +192,10 @@ datetime — carimbo horário do registro. É a espinha dorsal da análise: perm
 ### Resultados
 
 **📥 Baixe a apresentação em HTML estilo PowerPoint** (clique no link e, em seguida, em "Download" ou "View raw"):  
-[https://drive.google.com/file/d/1E27NQAoMS-IlWDIjmUC06cNWLhDytVfQ/view?usp=sharing](https://drive.google.com/file/d/1E27NQAoMS-IlWDIjmUC06cNWLhDytVfQ/view?usp=sharing)
+[https://drive.google.com/file/d/1cpuAxpK7D-aXzuJe1uUNBD64lljXWKux/view?usp=sharing](https://drive.google.com/file/d/1cpuAxpK7D-aXzuJe1uUNBD64lljXWKux/view?usp=sharing)
 
 **📥 Baixe a apresentação em HTML estilo Power BI** (clique no link e, em seguida, em "Download" ou "View raw"):  
-[https://drive.google.com/file/d/1DpqMkLNrnWYtOHN_XdZFHJoG2ZFfss67/view?usp=sharing](https://drive.google.com/file/d/1DpqMkLNrnWYtOHN_XdZFHJoG2ZFfss67/view?usp=sharing)
+[https://drive.google.com/file/d/1aQKi4F5cl8gZgUv65gE98IufOYH9PrEQ/view?usp=sharing](https://drive.google.com/file/d/1aQKi4F5cl8gZgUv65gE98IufOYH9PrEQ/view?usp=sharing)
 
 ---
 
