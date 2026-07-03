@@ -1,44 +1,25 @@
-# Análise Exploratória e Diagnóstica da Brew Haven usando LLM
+# Análise Exploratória e Diagnóstica da ?? usando LLM
 
 ## Problema de Negócio
 
 ### Contexto da empresa
 
-A Brew Haven é uma rede de cafeterias que começou com uma pequena loja em um bairro movimentado da cidade. Com o passar dos anos, a empresa expandiu e hoje possui diversas unidades espalhadas pela cidade.
+Com base nas suas respostas, aqui está o contexto de negócio consolidado:
 
-A rede vende diversos produtos, como:
+**Quem consome:** CEO da empresa de bike-sharing.
 
-- Cafés tradicionais
-- Bebidas geladas
-- Chás
-- Chocolates
-- Produtos de confeitaria
+**Dor / pergunta central:** A empresa performou bem ou mal nesse período? O setor de bike-sharing como um todo está em expansão ou estagnação?
 
-O negócio funciona de forma semelhante a muitas cafeterias modernas:
+**Decisão que a análise embasa:** Decisão de **investir mais** ou **descontinuar/cortar** essa linha de produto/negócio.
 
-- Grande fluxo de clientes ao longo do dia
-- Vendas rápidas no balcão
-- Ticket médio relativamente baixo
-- Grande volume de transações
+**Implicações para o desenho da análise** (para eu alinhar com você antes de seguir):
 
-### A dúvida da diretoria
-
-Nos últimos meses, os gestores da Brew Haven começaram a perceber que algumas lojas parecem estar **cada vez mais movimentadas**, principalmente em determinados horários do dia.
-
-Diante desse cenário, a Brew Haven decidiu contratar um Analista de Dados para investigar a seguinte questão:
-
-> **Existe crescimento no faturamento da rede de cafeterias? Se sim, quais são as principais alavancas desse crescimento?**
-
-Esse é o **problema de negócio que vamos investigar**.
-
----
+- Como a decisão é binária e de alto risco (investir vs. cortar), a análise precisa ir além de "o volume subiu" — precisa mostrar **trajetória de crescimento** (mês a mês, YoY), **qualidade desse crescimento** (usuários recorrentes vs. ocasionais) e **sensibilidade a fatores externos** (clima, sazonalidade, feriados) que ajudam a separar "crescimento estrutural do negócio" de "ruído/sazonalidade".
+- Uma limitação importante: essa base é **operacional** (viagens/hora), não tem receita, custo, churn de assinantes ou CAC. Então dá para responder bem "a demanda está crescendo?", mas uma resposta completa sobre "investir ou cortar" idealmente cruzaria isso com dados financeiros, se existirem. Vale eu sinalizar isso nas recomendações finais.
 
 ## Premissas da análise
 
-- Dados de aproximadamente **148.969 transações** de uma rede de cafeterias com **3 lojas em Nova York** (Astoria, Lower Manhattan, Hell's Kitchen).
-- Vendas realizadas no período de **Janeiro a Junho de 2023**.
-- Cada linha representa um **item dentro de um pedido**, permitindo análises de mix de produtos, ticket médio e comportamento por horário.
-
+A base tem 10.886 registros horários, cobrindo 01/01/2011 a 19/12/2012 (~2 anos), sem valores nulos — uma base limpa e granular, ideal para análise de séries temporais e padrões de demanda.
 ---
 
 ## Estratégia da solução
@@ -51,7 +32,7 @@ As perguntas abertas são um tipo de demanda muito comum em análise de dados na
 
 Para essa análise, foi definida a seguinte pergunta aberta:
 
-> **Como estão as vendas da rede de cafeterias? O faturamento está crescendo e quais são as principais alavancas por trás desse crescimento?**
+> **Como esta o crescimento da categoria de bike-sharing? devemos cortar esse setor? ou investir?**
 
 ### Passo 2: Transformar pergunta aberta em fechada
 
@@ -59,99 +40,127 @@ As perguntas fechadas são um tipo de demanda muito comum na área de análise d
 
 Para essa análise, foi definida a seguinte pergunta fechada:
 
-> **Pergunta Fechada:** Analise o crescimento mês a mês do faturamento total e identifique se ele é impulsionado por aumento de volume de clientes ou por aumento do ticket médio. Em seguida, desdobre essa análise por loja, por categoria de produto, por tamanho de bebida, por horário do dia e por dia da semana, para identificar quais fatores estão puxando (ou travando) o crescimento da rede.
+> **Pergunta Fechada:** quero um grafico de barra mostrando a evolucao da demanda de bike-sharing durante o tempo, para entender se e algo meramente sazional ou se a categoria esta indo pra frente
 
 ### Passo 3: Definição da Coluna Fato
 
-O **Fato** é a coluna de interesse que representa o ponto focal da análise. Nesse caso, a coluna **`transaction_id`** mostra quantas vendas (checkouts) foram feitas, quando, e é feita uma contagem (utilizando valores distintos, já que um mesmo `transaction_id` pode aparecer em várias linhas quando o cliente leva múltiplos produtos) e segmentação por categoria (como loja, mês, dia da semana, tipo de produto e tamanho).
+O **Fato** é a coluna de interesse que representa o ponto focal da análise. (dataframe)
 
-O valor associado a esse fato é o **`Total_Bill`** do pedido, que deve ser somado por `transaction_id` para obter o faturamento real de cada venda.
+datetime — carimbo horário do registro. É a espinha dorsal da análise: permite decompor em ano, mês, dia da semana e hora, essencial para separar tendência (crescimento estrutural) de sazonalidade (padrão que se repete).
 
 ### Passo 4: Identificação das Dimensões
 
-#### Dimensões Analisadas do dataframe da Brew Haven
+#### Dimensões Analisadas do dataframe
 
-**Entendimento da Base de Dados - Visão geral das colunas**
+#### O que cada coluna representa (e seu significado de negócio)
 
-| Coluna | Tipo | O que representa | Significado de negócio |
-|--------|------|------------------|------------------------|
-| transaction_id | Numérico | Identificador único da transação | Chave primária — cada linha é uma venda de um único item (não é o pedido inteiro, é o item vendido) |
-| transaction_date | Data (texto) | Data da venda (DD-MM-AAAA) | Permite análise de sazonalidade, dias da semana, feriados |
-| transaction_time | Hora (texto) | Horário exato da venda | Permite entender picos de movimento (manhã, almoço, tarde) |
-| store_id | Numérico | Código da loja | Identificador técnico da unidade |
-| store_location | Categórico | Nome/bairro da loja (Hell's Kitchen, Lower Manhattan, Astoria) | Permite comparar performance entre unidades |
-| product_id | Numérico | Código do produto | Identificador técnico do item vendido |
-| transaction_qty | Numérico | Quantidade vendida naquela transação | Volume de vendas — indica se é venda unitária ou em maior quantidade |
-| unit_price | Monetário (texto "R$ x,xx") | Preço unitário do produto | Base para entender posicionamento de preço por produto |
-| Total_Bill | Monetário (texto "R$ x,xx") | Valor total da linha (qty × unit_price) | Métrica-chave de receita |
-| product_category | Categórico | Categoria macro do produto (Coffee, Tea, Bakery, etc.) | Visão de portfólio/mix de produtos |
-| product_type | Categórico | Subcategoria (ex: dentro de "Coffee": Espresso, Latte...) | Granularidade intermediária do mix |
-| product_detail | Categórico | Nome específico do item | Nível mais detalhado — SKU |
-| Size | Categórico | Tamanho (Small, Regular, Large, Not Defined) | Relevante para bebidas; "Not Defined" provavelmente aparece em produtos sem tamanho (ex: grãos de café, itens de padaria) |
-| Month Name / Month | Categórico/Numérico | Mês da transação (nome e número) | Sazonalidade mensal |
-| Day Name / Day of Week | Categórico/Numérico | Dia da semana (nome e número 0-6) | Padrão semanal (fim de semana vs. dia útil) |
-| Hour | Numérico | Hora da transação (0-23) | Padrão intradiário — horários de pico |
+**Dimensões de tempo/contexto**
 
-**Observação importante:** essa é uma base em **grão de item vendido**, não de "pedido" ou "cliente". Isso significa que não temos como saber quantos itens diferentes um mesmo cliente comprou em uma única visita, nem temos um identificador de cliente. Ou seja, dá para analisar produtos, receita, tempo e loja, mas não dá para analisar comportamento de cliente individual (recorrência, ticket médio por cliente, etc.) — o que temos é ticket médio por transação/linha, não por visita.
+- **`datetime`** — carimbo horário do registro. É a espinha dorsal da análise: permite decompor em ano, mês, dia da semana e hora, essencial para separar tendência (crescimento estrutural) de sazonalidade (padrão que se repete).
+- **`season`** (1=inverno, 2=primavera, 3=verão, 4=outono) — estação do ano. Negócio: bike-sharing é fortemente sazonal; ajuda a entender se quedas de volume são "o negócio piorando" ou "só é inverno".
+- **`holiday`** (0/1) — se o dia é feriado. Negócio: muda o perfil de uso (mais lazer, menos deslocamento para trabalho).
+- **`workingday`** (0/1) — se é dia útil (não é fim de semana nem feriado). Negócio: separa uso "utilitário" (ir trabalhar) de uso "recreativo" (passeio).
 
-#### Quais tipos de análise podem ser feitas com esse dataframe?
+**Dimensões climáticas**
 
-- Análise de receita e volume ao longo do tempo — evolução mês a mês, dia a dia, por hora do dia.
-- Análise comparativa entre lojas — receita, volume e mix de produtos por unidade (Hell's Kitchen vs. Lower Manhattan vs. Astoria).
-- Análise de mix de produtos (portfólio) — quais categorias/tipos/itens mais vendem em quantidade e em receita (ex: análise 80/20).
-- Análise de sazonalidade e padrão temporal — dias da semana mais fortes, horários de pico, tendência ao longo dos 5 meses.
-- Análise de precificação — variação de preço unitário por produto/tamanho, e como isso se traduz em receita.
-- Análise de tamanho/formato preferido (Small/Regular/Large) para itens que têm essa variação.
+- **`weather`** (1=limpo → 4=chuva/neve severa) — condição do tempo. Negócio: clima ruim reduz demanda; é um fator externo, não controlável pela empresa, importante para não confundir "queda por clima" com "queda por perda de mercado".
+- **`temp`** / **`atemp`** — temperatura real e sensação térmica (°C). Negócio: existe uma faixa de conforto que maximiza aluguéis; temperaturas extremas (muito frio ou muito quente) derrubam a demanda.
+- **`humidity`** — umidade relativa do ar. Negócio: afeta conforto do ciclista, especialmente combinada com temperatura alta.
+- **`windspeed`** — velocidade do vento. Negócio: vento forte desestimula o uso de bicicleta.
+
+**Métricas de resultado (as mais importantes para o CEO)**
+
+- **`casual`** — aluguéis feitos por usuários sem cadastro (avulsos/turistas/ocasionais). Negócio: proxy de **aquisição/demanda esporádica**, mais sensível a clima, fim de semana e lazer.
+- **`registered`** — aluguéis feitos por usuários cadastrados/assinantes. Negócio: proxy de **uso recorrente/fidelizado**, geralmente ligado a deslocamento (commuting) em dias úteis — é o motor mais estável e previsível do negócio.
+- **`count`** — total de aluguéis na hora (`casual` + `registered`). Negócio: é a métrica-headline de volume/demanda, mas sozinha esconde a composição entre os dois perfis de usuário, que é justamente o que diferencia "crescimento saudável" de "pico passageiro".
+
+---
+
+#### Que tipos de análise podem ser feitas com essa base
+
+1. **Análise de tendência temporal (crescimento/queda)** — evolução mensal e YoY (2011 vs. 2012) de `count`, `casual` e `registered`, para responder diretamente "a empresa/o setor está crescendo?".
+2. **Decomposição de sazonalidade** — padrões por estação, mês, dia da semana e hora do dia (ex.: picos às 8h e 18h em dias úteis = padrão de commuting).
+3. **Análise de composição de usuários (mix casual vs. registered)** — como a proporção entre os dois evolui ao longo do tempo; sinaliza se o crescimento vem de fidelização (bom sinal estrutural) ou só de picos ocasionais (menos previsível).
+4. **Análise de sensibilidade a fatores externos (clima)** — correlação de `count`/`casual`/`registered` com `temp`, `humidity`, `windspeed` e `weather`, para isolar o efeito do clima do efeito de tendência real do negócio.
+5. **Segmentação por tipo de dia** — comparação `workingday` vs. fim de semana/feriado, e o que isso revela sobre o "job to be done" do produto (transporte utilitário vs. lazer).
+6. **Detecção de anomalias/outliers** — horas com volume muito acima/abaixo do esperado, que podem indicar eventos especiais, falhas ou oportunidades.
+
+#### Perguntas de negócio que essa base pode responder
+
+- A demanda total (`count`) está crescendo, estagnada ou caindo entre 2011 e 2012?
+- O crescimento é impulsionado por novos usuários ocasionais (`casual`) ou por uso recorrente de assinantes (`registered`)? Qual é mais saudável/sustentável?
+- Existe sazonalidade forte o suficiente para explicar quedas pontuais sem que isso signifique problema estrutural?
+- O uso é majoritariamente utilitário (commuting em dias úteis) ou recreativo (fins de semana/feriados)? Isso indica quem é o cliente núcleo do negócio.
+- O clima é um fator de risco relevante para a operação (ex.: dependência de dias bons)?
+- Existem horários/dias com capacidade ociosa ou sobre-demanda, relevantes para dimensionamento de frota?
+
+**O que essa base NÃO responde diretamente** (importante para o CEO): não há receita, custo, ticket médio, churn de assinantes ou CAC — então ela mede muito bem a **demanda/uso do produto**, mas a decisão final de investir vs. cortar dependeria de cruzar isso com dados financeiros, se disponíveis.
+
 
 ### Passo 5: Hipóteses Analíticas
+#### Bloco A — Crescimento do negócio
 
-#### Bloco 1 — Tendência e Performance Geral
+**H1: A demanda total (`count`) cresceu de 2011 para 2012.**
 
-**H1:** A receita está em trajetória de crescimento ao longo dos 5 meses  
-- **Lógica:** Se a empresa está saudável, esperamos ver receita mensal estável ou crescente entre janeiro e maio de 2023. Uma queda consistente seria um sinal de alerta relevante para o CEO.  
-- **Como testar:** Agrupar `Total_Bill` por `Month`/`Month Name`, somar receita total e volume (`transaction_qty`), e plotar a série mensal. Calcular variação percentual mês a mês (MoM).
+- **Lógica:** é a pergunta mais direta do CEO — "o negócio está crescendo?". Se sim, é um argumento a favor de investir; se está estagnado ou caindo, é sinal de alerta.
+- **Como testar:** agregar `count` por mês e por ano, comparar totais/médias 2011 vs. 2012 (YoY %). Ideal comparar meses equivalentes (jan/2011 vs jan/2012) para não misturar sazonalidade com tendência.
 
-**H2:** Existe sazonalidade dentro da semana — fins de semana e/ou dias específicos vendem mais  
-- **Lógica:** Cafeterias tipicamente têm padrão de consumo diferente entre dias úteis (rotina de trabalho) e fins de semana (lazer). Entender isso ajuda o CEO a avaliar se a operação está capturando bem esses padrões.  
-- **Como testar:** Agrupar receita e volume por `Day Name`/`Day of Week`, comparar médias e visualizar em gráfico de barras.
+**H2: O crescimento (se existir) é consistente ao longo dos meses, não concentrado em poucos picos.**
 
-**H3:** Existem horários de pico concentrados (ex: manhã, horário de almoço)  
-- **Lógica:** Cafeterias costumam ter picos claros (café da manhã, pausa da tarde). Isso não é uma decisão operacional imediata, mas ajuda a contextualizar se o padrão de consumo é "saudável"/esperado para o setor.  
-- **Como testar:** Agrupar receita/volume por `Hour`, visualizar curva intradiária.
+- **Lógica:** um crescimento "saudável" é distribuído; se só alguns meses puxam a média, pode ser evento pontual (ex.: campanha, evento na cidade) e não crescimento estrutural do negócio.
+- **Como testar:** plotar a série mensal de `count` para os 2 anos sobrepostos (mês a mês) e observar se o ganho é generalizado ou concentrado.
 
-#### Bloco 2 — Comparação entre Lojas
+---
 
-**H4:** As 3 lojas têm performances de receita significativamente diferentes  
-- **Lógica:** Se uma loja puxa a média para cima e as outras estão fracas (ou vice-versa), a visão consolidada pode esconder problemas ou oportunidades relevantes para o CEO.  
-- **Como testar:** Agrupar `Total_Bill` por `store_location`, comparar receita total, receita média por transação e volume. Calcular participação (%) de cada loja na receita total.
+#### Bloco B — Composição de usuários (casual vs. registered)
 
-**H5:** As lojas têm trajetórias de crescimento diferentes ao longo do tempo  
-- **Lógica:** A empresa como um todo pode parecer estável, mas isso pode mascarar uma loja crescendo e outra em queda — informação crítica para o CEO avaliar "bom ou ruim" com mais nuance.  
-- **Como testar:** Cruzar `store_location` x `Month`, gerando série temporal de receita por loja (gráfico de linhas múltiplas).
+**H3: O crescimento é puxado principalmente por usuários `registered`, não por `casual`.**
 
-**H6:** O mix de produtos varia entre lojas (cada loja tem um "perfil" de consumo diferente)  
-- **Lógica:** Localização (Hell's Kitchen, Lower Manhattan, Astoria) tem perfis de público diferentes (turismo, área comercial, residencial), o que pode gerar diferenças no que é mais vendido.  
-- **Como testar:** Tabela cruzada `store_location` x `product_category`, comparando % de receita por categoria dentro de cada loja.
+- **Lógica:** usuários registrados representam uso recorrente/fidelizado — um motor de crescimento mais previsível e sustentável do que picos de usuários ocasionais. Isso muda a leitura de "quão saudável" é o crescimento.
+- **Como testar:** calcular a taxa de crescimento YoY separadamente para `casual` e `registered`, e comparar a participação (%) de cada um no total ao longo do tempo.
 
-#### Bloco 3 — Mix de Produtos e Portfólio
+**H4: A proporção de usuários `registered` no total aumenta ao longo do tempo (maior fidelização).**
 
-**H7:** Uma pequena quantidade de categorias/produtos concentra a maior parte da receita (padrão 80/20)  
-- **Lógica:** É comum que poucos produtos "carreguem" o negócio. Saber isso ajuda o CEO a entender onde está a real força do portfólio.  
-- **Como testar:** Agrupar receita por `product_category` e `product_type`, ordenar decrescente, calcular % acumulado (curva de Pareto).
+- **Lógica:** se a empresa está retendo mais usuários (convertendo casual → registrado), isso é evidência de maturação e fortalecimento do negócio, não só de mais volume.
+- **Como testar:** calcular `registered / count` por mês e verificar se há tendência de alta ao longo dos 24 meses.
 
-**H8:** Itens de tamanho "Large" geram receita desproporcional em relação ao volume vendido  
-- **Lógica:** Se tamanhos maiores têm preço proporcionalmente mais alto que o custo/volume adicional, isso indica eficiência de ticket — relevante mesmo numa análise geral, pois mostra "qualidade" da receita.  
-- **Como testar:** Agrupar `Total_Bill` e `transaction_qty` por `Size` (excluindo "Not Defined"), comparar ticket médio por tamanho.
+---
 
-**H9:** "Coffee beans" e itens de maior preço unitário têm baixo volume mas impacto relevante na receita  
-- **Lógica:** Categorias como grãos premium (ex: "Civet Cat" visto na amostra) têm preço unitário alto — mesmo com poucas transações, podem distorcer a leitura de "ticket médio" e merecem ser vistas separadamente.  
-- **Como testar:** Comparar distribuição de `unit_price` por categoria, identificar outliers de preço e seu peso relativo na receita total.
+#### Bloco C — Sazonalidade e clima
 
-#### Bloco 4 — Qualidade e Consistência da Receita
+**H5: A demanda é fortemente sazonal (maior no verão/primavera, menor no inverno).**
 
-**H10:** O ticket médio por transação é estável ao longo do tempo (sinal de consistência, não só de volume)  
-- **Lógica:** Receita pode crescer por mais transações (mais fluxo) ou por ticket maior (mais valor por venda). Isso muda a "leitura" de saúde do negócio para o CEO — crescer por volume é diferente de crescer por preço.  
-- **Como testar:** Calcular receita total, número de transações e ticket médio (`Total_Bill`/transação) por mês, decompor a variação de receita em efeito volume vs. efeito ticket médio.
+- **Lógica:** se a sazonalidade explica boa parte da variação, quedas pontuais não devem ser interpretadas como "o negócio piorando" — importante para o CEO não tirar conclusões precipitadas olhando só um trimestre ruim.
+- **Como testar:** comparar médias de `count` por `season`, com boxplots ou médias por estação; testar se a diferença é estatisticamente relevante (ex.: ANOVA ou apenas magnitude da diferença de médias).
+
+**H6: Condições climáticas ruins (`weather` alto, chuva/neve) reduzem a demanda, especialmente de usuários `casual`.**
+
+- **Lógica:** usuários ocasionais (lazer/turismo) devem ser mais sensíveis ao clima do que usuários registrados que usam para deslocamento obrigatório (trabalho). Isso testa se `casual` é um segmento mais "frágil" para o negócio.
+- **Como testar:** correlacionar `weather`, `temp`, `humidity`, `windspeed` com `casual` e `registered` separadamente, comparando a força da correlação entre os dois grupos.
+
+**H7: Existe uma "faixa de conforto" de temperatura que maximiza os aluguéis, com queda em extremos (muito frio ou muito quente).**
+
+- **Lógica:** relação não-linear — relevante para entender limites operacionais e picos de demanda esperados por clima.
+- **Como testar:** plotar `count` médio por faixas (bins) de `temp`/`atemp` e observar se a curva sobe e depois desce (formato de "sino").
+
+---
+
+#### Bloco D — Padrão de uso (utilitário vs. recreativo)
+
+**H8: Em dias úteis (`workingday`=1), o uso é dominado por `registered`, com picos nítidos às 8h e 18h (commuting).**
+
+- **Lógica:** se confirmado, mostra que o core do negócio é transporte utilitário (mais previsível, ligado a rotina de trabalho) — um argumento forte de "produto essencial" para o CEO.
+- **Como testar:** agrupar `count`/`registered`/`casual` por hora do dia, separando `workingday`=1 vs. 0, e visualizar os picos horários.
+
+**H9: Em fins de semana e feriados, o uso é mais distribuído ao longo do dia e dominado por `casual` (lazer).**
+
+- **Lógica:** complementar à H8 — caracteriza o segundo "job to be done" do produto (recreação), que tem dinâmica de demanda diferente e pode exigir estratégia própria.
+- **Como testar:** mesma agregação por hora, mas para `workingday`=0 e `holiday`=1, comparando o formato da curva com a de dias úteis.
+
+**H10: Feriados têm padrão de uso mais parecido com fins de semana do que com dias úteis comuns.**
+
+- **Lógica:** valida se `holiday` deve ser tratado como uma variante de "dia não-útil" na análise, simplificando a segmentação.
+- **Como testar:** comparar curvas horárias médias de `holiday`=1 vs. `workingday`=0 (sem feriado) vs. `workingday`=1.
 
 ---
 
@@ -162,21 +171,20 @@ O valor associado a esse fato é o **`Total_Bill`** do pedido, que deve ser soma
 
 ### Passo 7: Priorização das Hipóteses Analíticas
 
-**Resumo dos vereditos**
+### Resumo dos vereditos
 
 | # | Hipótese | Veredito |
-|---|----------|----------|
-| H1 | Receita em trajetória de crescimento | ✅ Confirmada |
-| H2 | Fim de semana vende mais | ❌ Refutada |
-| H3 | Picos de horário concentrados | ✅ Confirmada |
-| H4 | Lojas com performance muito diferente | ❌ Refutada |
-| H5 | Lojas com trajetórias diferentes | ❌ Refutada |
-| H6 | Mix de produto varia por loja | 🟡 Parcial |
-| H7 | Concentração de receita (Pareto) | ✅ Confirmada |
-| H8 | Tamanho maior = ticket desproporcional | ✅ Confirmada |
-| H9 | Itens caros, baixo volume, alto impacto | 🟡 Parcial |
-| H10 | Ticket médio estável (crescimento = volume) | ✅ Confirmada |
-
+| --- | --- | --- |
+| H1 | Demanda total cresceu 2011→2012 | ✅ Confirmada (+66,7%) |
+| H2 | Crescimento consistente em todos os meses | ✅ Confirmada |
+| H3 | Crescimento puxado por `registered` | ✅ Confirmada (+70% vs +52%) |
+| H4 | Participação de `registered` cresce no tempo | 🟡 Parcial (leve alta, ofuscada por sazonalidade) |
+| H5 | Forte sazonalidade por estação | ✅ Confirmada |
+| H6 | Clima ruim afeta mais `casual` | ✅ Confirmada |
+| H7 | Curva em sino de temperatura (conforto) | ❌ Refutada (curva sobe e estabiliza, não cai) |
+| H8 | Dias úteis: picos 8h/18h, dominado registered | ✅ Confirmada |
+| H9 | Fim de semana: distribuído, dominado por casual | 🟡 Parcial (distribuído sim; dominado não — registered ainda é maioria) |
+| H10 | Feriado parecido com fim de semana | ✅ Confirmada |
 ---
 
 ## Insights da análise
