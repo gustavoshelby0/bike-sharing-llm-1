@@ -1,5 +1,14 @@
 # Análise Exploratória e Diagnóstica da Categoria Bike-Sharing usando LLM
 
+## Data Analyst LLM
+
+📥 **Baixe a apresentação estilo Power BI em HTML:**
+[Clique aqui para acessar o arquivo](https://drive.google.com/file/d/1LWaF_EHv4TL8TVkpW1fnKdp5A4fPkQlx/view?usp=sharing)
+
+📥 **Baixe a apresentação executiva em HTML:**
+[Clique aqui para acessar o arquivo](https://drive.google.com/file/d/1ZgEz0vbEQhT6BiK5MM3KvzoUYTapAk_K/view?usp=sharing)
+
+
 ## Problema de Negócio
 
 ### Contexto da empresa
@@ -191,13 +200,14 @@ O **Fato** é a coluna de interesse que representa o ponto focal da análise. (d
 
 ## Insights da análise
 
-### Resultados
 
-**📥 Baixe a apresentação em HTML estilo PowerPoint** (clique no link e, em seguida, em "Download" ou "View raw"):  
-[https://drive.google.com/file/d/1cpuAxpK7D-aXzuJe1uUNBD64lljXWKux/view?usp=sharing](https://drive.google.com/file/d/1cpuAxpK7D-aXzuJe1uUNBD64lljXWKux/view?usp=sharing)
+## Data Analyst LLM
 
-**📥 Baixe a apresentação em HTML estilo Power BI** (clique no link e, em seguida, em "Download" ou "View raw"):  
-[https://drive.google.com/file/d/1aQKi4F5cl8gZgUv65gE98IufOYH9PrEQ/view?usp=sharing](https://drive.google.com/file/d/1aQKi4F5cl8gZgUv65gE98IufOYH9PrEQ/view?usp=sharing)
+📥 **Baixe a apresentação estilo Power BI em HTML:**
+[Clique aqui para acessar o arquivo](https://drive.google.com/file/d/1LWaF_EHv4TL8TVkpW1fnKdp5A4fPkQlx/view?usp=sharing)
+
+📥 **Baixe a apresentação executiva em HTML:**
+[Clique aqui para acessar o arquivo](https://drive.google.com/file/d/1ZgEz0vbEQhT6BiK5MM3KvzoUYTapAk_K/view?usp=sharing)
 
 ---
 
